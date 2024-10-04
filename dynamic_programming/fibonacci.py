@@ -19,6 +19,9 @@ plus petits, et en mémorisant les solutions de ces sous-problèmes pour
 # Indice: la fonction doit être récursive.
 
 
+from typing import List
+
+
 def fibonacci(n: int) -> int:
     """
     Calcule le n-ième terme de la suite de Fibonacci.
@@ -43,6 +46,13 @@ def fibonacci_memo(n: int) -> int:
     Calcule le n-ième terme de la suite de Fibonacci, en mémorisant les
     résultats intermédiaires.
     """
-
     # BEGIN SOLUTION
+    memo = {0: 0, 1: 1}
+    def aux(n: int, memo: dict[int: int]) -> int:
+        if n == 1 or n == 0:
+            return memo[n]
+        if n not in memo:
+            memo[n] = aux(n - 1, memo) + aux(n - 2, memo)
+        return memo[n]
+    return aux(n, memo)
     # END SOLUTION
