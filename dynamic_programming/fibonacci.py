@@ -23,8 +23,11 @@ def fibonacci(n: int) -> int:
     """
     Calcule le n-ième terme de la suite de Fibonacci.
     """
-    # BEGIN SOLUTION
-    # END SOLUTION
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    return fibonacci(n - 1) + fibonacci(n - 2)
 
 
 # Exercice 2: Fibonacci avec mémorisation
