@@ -26,6 +26,24 @@ def mdp_value_iteration(mdp: MDP, max_iter: int = 1000, gamma=1.0) -> np.ndarray
     """
     values = np.zeros(mdp.observation_space.n)
     # BEGIN SOLUTION
+    epsilon = 1e-5 
+    change = float('inf')
+    iteration_count = 0  
+
+    while iteration_count < max_iter and change > epsilon:
+        previous_values = values.copy()
+        change = 0 
+
+        for current_state in range(mdp.observation_space.n):
+            state_action_values = []  
+            for selected_action in range(mdp.action_space.n):
+                next_state, reward, _ = mdp.P[current_state][selected_action]
+                state_action_values.append(reward + gamma * previous_values[next_state])
+
+            values[current_state] = max(state_action_values)  
+            change = max(change, abs(previous_values[current_state] - values[current_state])) 
+
+        iteration_count += 1  
     # END SOLUTION
     return values
 
@@ -42,7 +60,37 @@ def grid_world_value_iteration(
     """
     values = np.zeros((4, 4))
     # BEGIN SOLUTION
+    iteration = 0
+    max_diff = float('inf')
+
+    while iteration < max_iter and max_diff > theta:
+        previous_values = values.copy()
+        max_diff = 0
+
+        for x in range(4):
+            for y in range(4):
+                potential_values = []
+
+                if env.grid[x, y] in {"P", "N", "W"}:
+                    potential_values.append(0)
+                    continue
+
+                for move in range(env.action_space.n):
+                    env.current_position = (x, y)
+                    next_position, reward, terminated, _ = env.step(move)
+
+                    if next_position == (x, y):
+                        potential_values.append(0)
+                        continue
+
+                    potential_values.append(reward + gamma * previous_values[next_position])
+
+                values[x, y] = np.max(potential_values)
+                max_diff = max(max_diff, abs(previous_values[x, y] - values[x, y]))
+
+        iteration += 1
     # END SOLUTION
+    return values
 
 
 def value_iteration_per_state(env, values, gamma, prev_val, delta):
@@ -52,7 +100,6 @@ def value_iteration_per_state(env, values, gamma, prev_val, delta):
         next_states = env.get_next_states(action=action)
         current_sum = 0
         for next_state, reward, probability, _, _ in next_states:
-            # print((row, col), next_state, reward, probability)
             next_row, next_col = next_state
             current_sum += (
                 probability
@@ -70,5 +117,43 @@ def stochastic_grid_world_value_iteration(
     gamma: float = 1.0,
     theta: float = 1e-5,
 ) -> np.ndarray:
-    values = np.zeros((4, 4))
+    value_matrix = np.zeros((4, 4))
     # BEGIN SOLUTION
+    env = GridWorldEnv()
+    iteration = 0
+    max_delta = float('inf')
+
+    while iteration < max_iter and max_delta > theta:
+        previous_values = value_matrix.copy()
+        max_delta = 0
+
+        for row in range(4):
+            for col in range(4):
+                if env.grid[row, col] in {"P", "N", "W"}:
+                    continue
+
+                action_values = []
+
+                for action in range(env.action_space.n):
+                    action_value = 0
+
+                    for offset in [-1, 1]:
+                        env.current_position = (row, col)
+                        next_state, reward, _, _ = env.step((action + offset) % 4)
+                        if next_state == (1, 1):
+                            next_state = (row, col)
+                        action_value += 0.05 * (reward + gamma * previous_values[next_state])
+
+                    env.current_position = (row, col)
+                    next_state, reward, _, _ = env.step(action)
+                    if next_state == (1, 1):
+                        next_state = (row, col)
+                    action_value += 0.9 * (reward + gamma * previous_values[next_state])
+                    action_values.append(action_value)
+
+                value_matrix[row, col] = np.max(action_values)
+
+        max_delta = np.sum(np.abs(previous_values - value_matrix))
+        iteration += 1
+    # END SOLUTION
+    return value_matrix
